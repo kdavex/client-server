@@ -7,9 +7,13 @@ const app = Fastify({
 });
 
 app.get("/", async (req, res) => {
-  const htmlContent = readFileSync("./index.html", "utf8");
-
-  return res.status(200).type("text/html").send(htmlContent);
+  try {
+    const htmlContent = readFileSync("./index.html", "utf8");
+    return res.status(200).type("text/html").send(htmlContent);
+  } catch (error) {
+    console.error("Error reading HTML file:", error);
+    return res.status(500).send("Internal Server Error");
+  }
 });
 
 export default async function handler(req: any, res: any) {
