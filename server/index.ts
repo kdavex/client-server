@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { readFileSync } from "fs";
 
+console.log("nagana!");
 const app = Fastify({
   logger: true,
 });
