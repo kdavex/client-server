@@ -11,7 +11,7 @@
     "client": "npx vite",
     "generate": "prisma generate --schema ./server/models/schema.prisma",
     "db-push": "prisma db push --schema ./server/models/schema.prisma",
-    "server": "prisma generate && tsx watch --tsconfig  tsconfig.server.json server/index.ts --clear-screen=false",
+    "server": "tsx watch --tsconfig  tsconfig.server.json server/index.ts --clear-screen=false",
     "tailwind": "npx tailwindcss -i ./client/styles/tailwind.css -o ./client/dist/tailwind.css --watch"
   },
   "author": "Bryan Gonzales",
