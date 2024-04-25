@@ -1,0 +1,361 @@
+import {  PrismaClient } from "@prisma/client";
+import { ObjectId } from "mongodb";
+
+export async function commentExist(
+  {
+    commentId,
+  }: {
+    commentId: string;
+  },
+  prisma: PrismaClient
+) {
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+  });
+  if (!comment) return false;
+  return true;
+}
+
+// export async function upVoteTogglex(
+//   {
+//     commentId,
+//     userId,
+//   }: {
+//     commentId: string;
+//     userId: string;
+//   },
+//   prisma: PrismaClient
+// ) {
+//   const likeExist = await prisma.comment.findUnique({
+//     where: {
+//       id: commentId,
+//       OR: [
+//         { up_voted_by_users_id: { has: userId } },
+//         { down_voted_by_users_id: { has: userId } },
+//       ],
+//     },
+//     select: { up_voted_by_users_id: true, down_voted_by_users_id: true },
+//   });
+
+//   console.log("upvotes: " + likeExist?.up_voted_by_users_id);
+//   // Reomve downVote if exist
+//   if (!likeExist?.up_voted_by_users_id.length) {
+//     console.log("Upvote Toggle: vote does not exist");
+//     await prisma.comment.update({
+//       where: { id: commentId },
+//       data: {
+//         up_voted_by_users_id: { push: userId },
+//         down_voted_by_users_id: {
+//           set:
+//             likeExist?.down_voted_by_users_id.filter((e) => userId !== e) || [],
+//         },
+//       },
+//     });
+//   } else {
+//     await prisma.comment.update({
+//       where: { id: commentId },
+//       data: {
+//         up_voted_by_users_id: {
+//           set:
+//             likeExist?.up_voted_by_users_id.filter((e) => userId !== e) || [],
+//         },
+//         down_voted_by_users_id: {
+//           set:
+//             likeExist?.down_voted_by_users_id.filter((e) => userId !== e) || [],
+//         },
+//       },
+//     });
+//   }
+// }
+export async function testCommentQuery(
+  { userId, commentId }: { userId: string; commentId: string },
+  prisma: PrismaClient
+) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      comments: {
+        connect: { id: commentId },
+      },
+    },
+  });
+}
+
+// export async function downVoteTogglex(
+//   { userId, commentId }: { userId: string; commentId: string },
+//   prisma: PrismaClient
+// ) {
+//   const likeExist = await prisma.comment.findUnique({
+//     where: {
+//       id: commentId,
+//       OR: [
+//         { down_voted_by_users_id: { has: userId } },
+//         { up_voted_by_users_id: { has: userId } },
+//       ],
+//     },
+//     select: { down_voted_by_users_id: true, up_voted_by_users_id: true },
+//   });
+
+//   if (likeExist?.down_voted_by_users_id.length)
+//     await prisma.comment.update({
+//       where: { id: commentId },
+//       data: {
+//         down_voted_by_users_id: {
+//           set:
+//             likeExist?.down_voted_by_users_id.filter((e) => e !== userId) || [],
+//         },
+//         up_voted_by_users_id: {
+//           set:
+//             likeExist?.up_voted_by_users_id.filter((e) => userId !== e) || [],
+//         },
+//       },
+//     });
+//   else
+//     await prisma.comment.update({
+//       where: { id: commentId },
+//       data: {
+//         down_voted_by_users_id: { push: userId },
+//         up_voted_by_users_id: {
+//           set:
+//             likeExist?.up_voted_by_users_id.filter((e) => e !== userId) || [],
+//         },
+//       },
+//     });
+// }
+
+export async function downVoteToggle(
+  { userId, commentId }: { userId: string; commentId: string },
+  prisma: PrismaClient
+) {
+  const [commentReactions, userCommentReactions] = await prisma.$transaction([
+    prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { down_voted_by_users_id: true, up_voted_by_users_id: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { up_voted_comments_id: true, down_voted_comments_id: true },
+    }),
+  ]);
+
+  if (commentReactions?.down_voted_by_users_id.includes(userId)) {
+    const updateComment = prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        down_voted_by_users_id: {
+          set: commentReactions.down_voted_by_users_id.filter(
+            (e) => e !== userId
+          ),
+        },
+        up_voted_by_users_id: {
+          set: commentReactions.up_voted_by_users_id.filter(
+            (e) => e !== userId
+          ),
+        },
+      },
+    });
+    const updateUser = prisma.user.update({
+      where: { id: userId },
+      data: {
+        up_voted_comments_id: {
+          set: userCommentReactions?.up_voted_comments_id.filter(
+            (e) => e !== commentId
+          ),
+        },
+        down_voted_comments_id: {
+          set: userCommentReactions?.down_voted_comments_id.filter(
+            (e) => e !== commentId
+          ),
+        },
+      },
+    });
+    await prisma.$transaction([updateComment, updateUser]);
+  } else {
+    const updateComment = prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        down_voted_by_users_id: { push: userId },
+        up_voted_by_users_id: {
+          set: commentReactions?.up_voted_by_users_id.filter(
+            (e) => e !== userId
+          ),
+        },
+      },
+    });
+    const updateUser = prisma.user.update({
+      where: { id: userId },
+      data: {
+        down_voted_comments_id: { push: commentId },
+        up_voted_comments_id: {
+          set: userCommentReactions?.down_voted_comments_id.filter(
+            (e) => e !== commentId
+          ),
+        },
+      },
+    });
+    await prisma.$transaction([updateComment, updateUser]);
+  }
+}
+
+export async function upVoteToggle(
+  { userId, commentId }: { userId: string; commentId: string },
+  prisma: PrismaClient
+) {
+  const [commentReactions, userCommentReactions] = await prisma.$transaction([
+    prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { down_voted_by_users_id: true, up_voted_by_users_id: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { up_voted_comments_id: true, down_voted_comments_id: true },
+    }),
+  ]);
+
+  if (commentReactions?.up_voted_by_users_id.includes(userId)) {
+    const updateComment = prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        down_voted_by_users_id: {
+          set: commentReactions.down_voted_by_users_id.filter(
+            (e) => e !== userId
+          ),
+        },
+        up_voted_by_users_id: {
+          set: commentReactions.up_voted_by_users_id.filter(
+            (e) => e !== userId
+          ),
+        },
+      },
+    });
+    const updateUser = prisma.user.update({
+      where: { id: userId },
+      data: {
+        up_voted_comments_id: {
+          set: userCommentReactions?.up_voted_comments_id.filter(
+            (e) => e !== commentId
+          ),
+        },
+        down_voted_comments_id: {
+          set: userCommentReactions?.up_voted_comments_id.filter(
+            (e) => e !== commentId
+          ),
+        },
+      },
+    });
+    await prisma.$transaction([updateComment, updateUser]);
+  } else {
+    const updateComment = prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        up_voted_by_users_id: { push: userId },
+        down_voted_by_users_id: {
+          set: commentReactions?.up_voted_by_users_id.filter(
+            (e) => e !== userId
+          ),
+        },
+      },
+    });
+    const updateUser = prisma.user.update({
+      where: { id: userId },
+      data: {
+        up_voted_comments_id: { push: commentId },
+        down_voted_comments_id: {
+          set: commentReactions?.up_voted_by_users_id.filter(
+            (e) => e !== commentId
+          ),
+        },
+      },
+    });
+    await prisma.$transaction([updateComment, updateUser]);
+  }
+}
+
+export async function getCommment(commentId: string, prisma: PrismaClient) {
+  return await prisma.comment.findUnique({
+    where: { id: commentId },
+  });
+}
+
+export async function createComment(
+  {
+    userId,
+    postId,
+    content,
+    type,
+  }: {
+    userId: string;
+    postId: string;
+    content: string;
+    type: "POST" | "PROJECT";
+  },
+  prisma: PrismaClient
+) {
+  await prisma.post.update({
+    where: { id: postId },
+    data: {
+      comments: {
+        create: {
+          content: content,
+          author_id: userId,
+          type: type,
+        },
+      },
+    },
+  });
+}
+
+export async function replyComment(
+  {
+    commentId,
+    targetId,
+    author_id,
+    content,
+    type,
+  }: {
+    commentId: string;
+    author_id: string;
+    content: string;
+    type: "POST" | "PROJECT";
+    targetId: string;
+  },
+  prisma: PrismaClient
+) {
+  const replyId = new ObjectId().toHexString();
+  if (type === "POST")
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        replies_id: {
+          push: replyId,
+        },
+        replies: {
+          create: {
+            id: replyId,
+            content: content,
+            author_id: author_id,
+            type: type,
+            post_id: targetId,
+          },
+        },
+      },
+    });
+  else if (type === "PROJECT")
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        replies_id: {
+          push: replyId,
+        },
+        replies: {
+          create: {
+            id: replyId,
+            content: content,
+            author_id: author_id,
+            type: type,
+            project_id: targetId,
+          },
+        },
+      },
+    });
+}

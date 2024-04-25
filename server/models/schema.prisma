@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URI")
+}
+
+// TODO figure out how to add a 1:many self relation in field friends
+model User {
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  username           String            @unique
+  email              String            @unique
+  firstname          String
+  lastname           String
+  middlename         String
+  bio                String?
+  date_of_Birth      DateTime
+  gender             Gender
+  address            Address
+  role               Role              @default(USER)
+  proffeciency       Proffeciency      @default(NEWBIE)
+  affiliation        Affiliation       @default(WOOD_ENTHUSIAST)
+  user_image         UserImage
+  user_status        UserStatus        @default(ACTIVE)
+  date_joined        DateTime          @default(now())
+  updatedAt          DateTime?         @updatedAt
+  account_visibility AccountVisibility @default(PUBLIC)
+  interests          String[]          @default([])
+
+  liked_posts_id         String[] @default([]) @db.ObjectId
+  disliked_post_id       String[] @default([]) @db.ObjectId
+  up_voted_comments_id   String[] @default([]) @db.ObjectId
+  down_voted_comments_id String[] @default([]) @db.ObjectId
+  liked_projects_id      String[] @default([]) @db.ObjectId
+  disliked_projects_id   String[] @unique @default([]) @db.ObjectId
+  converse_id            String[] @unique @default([]) @db.ObjectId
+  follower_ids           String[] @unique @default([]) @db.ObjectId
+  following_ids          String[] @unique @default([]) @db.ObjectId
+
+  credential           Credential?
+  posts                Post[]
+  projects             Project[]
+  disliked_projets     Project[]      @relation("disliked_projects", fields: [disliked_projects_id], references: [id])
+  liked_posts          Post[]         @relation("liked_posts", fields: [liked_posts_id], references: [id])
+  disliked_posts       Post[]         @relation("disliked_posts", fields: [disliked_post_id], references: [id])
+  up_voted_comments    Comment[]      @relation("up_voted_comments", fields: [up_voted_comments_id], references: [id])
+  down_voted_comments  Comment[]      @relation("down_voted_comments", fields: [down_voted_comments_id], references: [id])
+  comments             Comment[]
+  liked_projects       Project[]      @relation("liked_projects", fields: [liked_projects_id], references: [id])
+  NotificationSent     Notification[] @relation("notifTo")
+  NotificationReceived Notification[] @relation("notifBy")
+  followers            User[]         @relation("followers", fields: [follower_ids], references: [id])
+  following            User[]         @relation("followers", fields: [following_ids], references: [id])
+  SentMessages         Message[]      @relation("sentMessage")
+  ReicievedMessages    Message[]      @relation("recievedMessage")
+  Conversations        Converse[]     @relation("messengers", fields: [converse_id], references: [id])
+}
+
+model Post {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  title     String?
+  context   String
+  status    PostStatus  @default(ACTIVE)
+  tags      String[]    @default([])
+  media     PostMedia[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime?   @updatedAt
+
+  liked_by_users_id    String[] @default([]) @db.ObjectId
+  disliked_by_users_id String[] @default([]) @db.ObjectId
+  author_id            String   @db.ObjectId
+
+  liked_by_users    User[]         @relation("liked_posts", fields: [liked_by_users_id], references: [id])
+  disliked_by_users User[]         @relation("disliked_posts", fields: [disliked_by_users_id], references: [id])
+  author            User           @relation(fields: [author_id], references: [id])
+  comments          Comment[]
+  Notifications     Notification[]
+}
+
+model Project {
+  id                   String         @id @default(auto()) @map("_id") @db.ObjectId
+  title                String
+  author_id            String         @db.ObjectId
+  context              String
+  tags                 String[]       @default([])
+  media                ProjectMedia[]
+  projectStatus        PostStatus     @default(ACTIVE)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  liked_by_users_id    String[]       @default([]) @db.ObjectId
+  disliked_by_users_id String[]       @default([]) @db.ObjectId
+  labels               String[]
+
+  liked_by_users    User[]    @relation("liked_projects", fields: [liked_by_users_id], references: [id])
+  disliked_by_users User[]    @relation("disliked_projects", fields: [disliked_by_users_id], references: [id])
+  author            User      @relation(fields: [author_id], references: [id])
+  comments          Comment[]
+}
+
+model Comment {
+  id                     String      @id @default(auto()) @map("_id") @db.ObjectId
+  type                   CommentType
+  content                String
+  status                 PostStatus  @default(ACTIVE)
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime?   @updatedAt
+  up_voted_by_users_id   String[]    @default([]) @db.ObjectId
+  down_voted_by_users_id String[]    @default([]) @db.ObjectId
+
+  reply_to_id String?  @db.ObjectId
+  author_id   String   @db.ObjectId
+  post_id     String?  @db.ObjectId
+  project_id  String?  @db.ObjectId
+  replies_id  String[] @db.ObjectId
+
+  up_voted_by_users   User[]         @relation("up_voted_comments", fields: [up_voted_by_users_id], references: [id])
+  down_voted_by_users User[]         @relation("down_voted_comments", fields: [down_voted_by_users_id], references: [id])
+  author              User           @relation(fields: [author_id], references: [id])
+  post                Post?          @relation(fields: [post_id], references: [id])
+  project             Project?       @relation(fields: [project_id], references: [id])
+  replies             Comment[]      @relation("replies")
+  replied_to          Comment?       @relation("replies", fields: [reply_to_id], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  Notification        Notification[]
+}
+
+model Credential {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  email    String @unique
+  password String
+
+  user_id String @unique @db.ObjectId
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  type      NotificationType
+  createdAt DateTime         @default(now())
+  updatedAt DateTime?        @updatedAt
+
+  notifTo_id   String  @db.ObjectId
+  notifFrom_id String  @db.ObjectId
+  post_id      String? @db.ObjectId
+  comment_id   String? @db.ObjectId
+
+  NotifFrom User     @relation("notifBy", fields: [notifFrom_id], references: [id])
+  NotifTo   User     @relation("notifTo", fields: [notifTo_id], references: [id])
+  Post      Post?    @relation(fields: [post_id], references: [id])
+  Comment   Comment? @relation(fields: [comment_id], references: [id])
+}
+
+model Converse {
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId
+  creaedAt  DateTime        @default(now())
+  updatedAt DateTime?       @updatedAt
+  unread    UnreadMessage[]
+
+  messengers_id String[] @unique @default([]) @db.ObjectId
+
+  messages   Message[]
+  messengers User[]    @relation("messengers", fields: [messengers_id], references: [id])
+}
+
+model Message {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  type      MessageType
+  media     PostMedia[]
+  chat      String?
+  createdAt DateTime
+  status    MesssageStatus
+
+  author_id    String @unique @db.ObjectId
+  converse_id  String @unique @db.ObjectId
+  recipient_id String @unique @db.ObjectId
+
+  Conversation Converse @relation(fields: [converse_id], references: [id])
+  Author       User     @relation("sentMessage", fields: [author_id], references: [id])
+  Recipient    User     @relation("recievedMessage", fields: [recipient_id], references: [id])
+}
+
+model Sample {
+  test1 String @id @map("_id") @db.ObjectId
+  test2 String
+}
+
+model Test {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  messengersId String[] @unique @default([]) @db.ObjectId
+}
+
+// * TYPES
+// type Message {
+//   id        String
+//   author_id String
+//   type      MessageType
+//   media     PostMedia[]
+//   chat      String?
+//   createdAt DateTime
+//   status    MesssageStatus
+// }
+
+type UnreadMessage {
+  user_id String
+  count   Int
+}
+
+type Address {
+  barangay     String
+  municipality String
+  province     String
+}
+
+type UserImage {
+  pfp_name   String
+  cover_name String
+}
+
+type PostMedia {
+  filename String
+  caption  String?
+}
+
+type ProjectMedia {
+  filename String
+  caption  String?
+}
+
+// * ENUMS
+
+enum NotificationType {
+  POST_REACT
+  POST_COMMENT
+  FOLLOW
+}
+
+enum AccountVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CommentType {
+  POST
+  PROJECT
+}
+
+enum UserStatus {
+  ARCHIVED
+  ACTIVE
+}
+
+enum Affiliation {
+  WOOD_ENTHUSIAST
+  WOOD_WORKER
+  WOOD_CRAFTER
+}
+
+enum UserActivity {
+  ONLINE
+  OFFLINE
+}
+
+enum Proffeciency {
+  NEWBIE
+  NOVICE
+  EXPERT
+}
+
+enum PostStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum MesssageStatus {
+  SENT
+  DELIVERED
+  READ
+}

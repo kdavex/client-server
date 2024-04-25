@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "experimentalDecorators": true,
+    "module": "CommonJS",
+    "outDir": "serverJs",
+    "moduleResolution": "Node16",
+    "baseUrl": "./",
+    "types": [
+      "./server/types/fastify.d.ts",
+      "./server/types/global.d.ts",
+      "./server/types/mongodb.d.ts"
+    ],
+    "resolveJsonModule": true,
+    "allowArbitraryExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["server"],
+  "exclude": ["node_modules", "dist", "client"]
+}

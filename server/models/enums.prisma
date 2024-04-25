@@ -1,0 +1,14 @@
+model User2 {
+  id       Int    @id @default(autoincrement())
+  username String
+  // Other user properties...
+
+  // Self-referencing relationship for outgoing friendships
+  friends User2[] @relation("Friends")
+
+  // Self-referencing relationship for incoming friendships
+  friendOf User2[] @relation("Friends")
+
+  test1 User2[] @relation("Test1")
+  test2 User2[] @relation("Test1")
+}
