@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchController = void 0;
-const utils_1 = require("../utils");
+import { capitalize } from "../utils";
 const search = async (req, res) => {
     if (req.params.search === undefined)
         return res
@@ -225,12 +222,12 @@ const search = async (req, res) => {
     let usersData = users.map((user) => {
         return {
             id: user.id,
-            fullname: (0, utils_1.capitalize)(`${user.firstname} ${user.lastname}`),
+            fullname: capitalize(`${user.firstname} ${user.lastname}`),
             bio: user.bio,
             affiliation: user.affiliation,
             cover: user.user_image.cover_name,
             pfp: user.user_image.pfp_name,
-            address: (0, utils_1.capitalize)(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
+            address: capitalize(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
             username: user.username,
         };
     });
@@ -245,14 +242,14 @@ const search = async (req, res) => {
             tags: post.tags,
             comments: post.comments.map((comment) => {
                 return {
-                    id: comment.id,
+                    id: comment.id, // Fix: Access the 'id' property from the 'comment' object
                     content: comment.content,
                     createdAt: comment.createdAt,
                     up_voted_by_users_id: comment.up_voted_by_users_id,
                     down_voted_by_users_id: comment.down_voted_by_users_id,
                     author: {
                         id: comment.author.id,
-                        fullname: (0, utils_1.capitalize)(`${comment.author.firstname} ${comment.author.lastname}`),
+                        fullname: capitalize(`${comment.author.firstname} ${comment.author.lastname}`),
                         bio: comment.author.bio,
                         affiliation: comment.author.affiliation,
                         cover: comment.author.user_image.cover_name,
@@ -264,12 +261,12 @@ const search = async (req, res) => {
             }),
             author: {
                 id: post.author.id,
-                fullname: (0, utils_1.capitalize)(`${post.author.firstname} ${post.author.lastname}`),
+                fullname: capitalize(`${post.author.firstname} ${post.author.lastname}`),
                 bio: post.author.bio,
                 affiliation: post.author.affiliation,
                 cover: post.author.user_image.cover_name,
                 pfp: post.author.user_image.pfp_name,
-                address: (0, utils_1.capitalize)(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
+                address: capitalize(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
                 username: post.author.username,
             },
         };
@@ -285,14 +282,14 @@ const search = async (req, res) => {
             tags: post.tags,
             comments: post.comments.map((comment) => {
                 return {
-                    id: comment.id,
+                    id: comment.id, // Fix: Access the 'id' property from the 'comment' object
                     content: comment.content,
                     createdAt: comment.createdAt,
                     up_voted_by_users_id: comment.up_voted_by_users_id,
                     down_voted_by_users_id: comment.down_voted_by_users_id,
                     author: {
                         id: comment.author.id,
-                        fullname: (0, utils_1.capitalize)(`${comment.author.firstname} ${comment.author.lastname}`),
+                        fullname: capitalize(`${comment.author.firstname} ${comment.author.lastname}`),
                         bio: comment.author.bio,
                         affiliation: comment.author.affiliation,
                         cover: comment.author.user_image.cover_name,
@@ -304,12 +301,12 @@ const search = async (req, res) => {
             }),
             author: {
                 id: post.author.id,
-                fullname: (0, utils_1.capitalize)(`${post.author.firstname} ${post.author.lastname}`),
+                fullname: capitalize(`${post.author.firstname} ${post.author.lastname}`),
                 bio: post.author.bio,
                 affiliation: post.author.affiliation,
                 cover: post.author.user_image.cover_name,
                 pfp: post.author.user_image.pfp_name,
-                address: (0, utils_1.capitalize)(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
+                address: capitalize(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
                 username: post.author.username,
             },
         };
@@ -319,6 +316,6 @@ const search = async (req, res) => {
         data: { posts: postsData, users: usersData, projects: projectData },
     });
 };
-exports.searchController = {
+export const searchController = {
     search,
 };

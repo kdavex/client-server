@@ -1,9 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const bcrypt_1 = require("bcrypt");
-const mongodb_1 = require("mongodb");
-const utils_1 = require("../utils");
-const checker_1 = require("../utils/checker");
+import { hash } from "bcrypt";
+import { ObjectId } from "mongodb";
+import { moveFile, capitalize, constantToCapitalize, createAccessToken, createRefreshToken, sendRefreshToken, } from "../utils";
+import { isValidObjectId } from "../utils/checker";
 const createUser = async (req, res) => {
     // Check if Email
     const emailExist = await req.prisma.user.findUnique({
@@ -29,8 +27,8 @@ const createUser = async (req, res) => {
     // TODO Add a valition
     // TODO Add a default PFP and Cover image
     // hash Password
-    const hashedPassword = await (0, bcrypt_1.hash)(req.body.password.replace(" ", ""), 10);
-    const userId = new mongodb_1.ObjectId().toHexString();
+    const hashedPassword = await hash(req.body.password.replace(" ", ""), 10);
+    const userId = new ObjectId().toHexString();
     // Create User & Credential
     try {
         await req.prisma.user.create({
@@ -54,7 +52,7 @@ const createUser = async (req, res) => {
                     .toUpperCase()
                     .replace(" ", "_"),
                 user_image: {
-                    pfp_name: req.body?.pfp?.filename ?? "default-pfp.jpg",
+                    pfp_name: req.body?.pfp?.filename ?? "default-pfp.jpg", // TODO add default pfp
                     cover_name: req.body?.cover?.filename ?? "default-cover.jpg", // TODO add default cover
                 },
                 credential: {
@@ -74,18 +72,18 @@ const createUser = async (req, res) => {
         });
     }
     // Move files to public folder
-    (0, utils_1.moveFile)([req.body?.pfp, req.body?.cover], "tmp", "public");
-    const accessToken = (0, utils_1.createAccessToken)({
+    moveFile([req.body?.pfp, req.body?.cover], "tmp", "public");
+    const accessToken = createAccessToken({
         email: req.body.email,
         id: userId,
         username: req.body.username,
-        userFullname: (0, utils_1.capitalize)(`${req.body.firstname} ${req.body.lastname}`),
+        userFullname: capitalize(`${req.body.firstname} ${req.body.lastname}`),
     });
-    const refreshToken = (0, utils_1.createRefreshToken)({
+    const refreshToken = createRefreshToken({
         email: req.body.email,
         id: userId,
     });
-    (0, utils_1.sendRefreshToken)(refreshToken, res);
+    sendRefreshToken(refreshToken, res);
     return res.code(201).send({
         status: "success",
         message: "User Successfully Created",
@@ -118,7 +116,7 @@ const updateUser = async (req, res) => {
         });
     // TODO Add validation
     // Update USER
-    const hashedPassword = req.body.password && (await (0, bcrypt_1.hash)(req.body.password, 10));
+    const hashedPassword = req.body.password && (await hash(req.body.password, 10));
     try {
         await req.prisma.user.update({
             where: { id: req.body.id },
@@ -163,7 +161,7 @@ const updateUser = async (req, res) => {
     // if (req.body.pfp) removeFiles([userExist.user_image.pfp_name], "public");
     // if (req.body.cover) removeFiles([userExist.user_image.cover_name], "public");
     // Move files to public folder
-    (0, utils_1.moveFile)([req.body?.pfp, req.body?.cover], "tmp", "public");
+    moveFile([req.body?.pfp, req.body?.cover], "tmp", "public");
     return res.send({ status: "success", message: "User Successfully Updated" });
 };
 const deleteUser = async (req, res) => {
@@ -218,12 +216,12 @@ const getNewUsers = async (req, res) => {
         return {
             id: user.id,
             username: user.username,
-            fullname: (0, utils_1.capitalize)(`${user.firstname} ${user.lastname}`),
+            fullname: capitalize(`${user.firstname} ${user.lastname}`),
             cover: user.user_image.cover_name,
             pfp: user.user_image.pfp_name,
-            address: (0, utils_1.capitalize)(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
+            address: capitalize(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
             bio: user.bio,
-            affiliation: (0, utils_1.constantToCapitalize)(user.affiliation),
+            affiliation: constantToCapitalize(user.affiliation),
         };
     });
     return res.send({
@@ -240,7 +238,7 @@ const getUser = async (req, res) => {
     // Check get user
     let user;
     try {
-        if ((0, checker_1.isValidObjectId)(req.params.id)) {
+        if (isValidObjectId(req.params.id)) {
             user = await req.prisma.user.findFirst({
                 where: {
                     id: req.params.id,
@@ -298,15 +296,15 @@ const getUser = async (req, res) => {
         message: "Successfully fetched user",
         data: {
             id: user.id,
-            fullname: (0, utils_1.capitalize)(`${user.firstname} ${user.lastname}`),
+            fullname: capitalize(`${user.firstname} ${user.lastname}`),
             cover: user.user_image.cover_name,
             pfp: user.user_image.pfp_name,
-            address: (0, utils_1.capitalize)(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
+            address: capitalize(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
             username: user.username,
             bio: user.bio,
             dateOfBirth: user.date_of_Birth,
-            affiliation: (0, utils_1.constantToCapitalize)(user.affiliation),
-            gender: (0, utils_1.constantToCapitalize)(user.gender),
+            affiliation: constantToCapitalize(user.affiliation),
+            gender: constantToCapitalize(user.gender),
             email: user.email,
             followersCount: user.followers.length,
             followingCount: user.following.length,
@@ -330,7 +328,7 @@ const getUserRawData = async (req, res) => {
             gender: true,
         },
     });
-    if ((0, checker_1.isValidObjectId)(req.params.usernameOrId) && !user) {
+    if (isValidObjectId(req.params.usernameOrId) && !user) {
         user = await req.prisma.user.findUnique({
             where: { id: req.params.usernameOrId },
             select: {
@@ -363,11 +361,11 @@ const getUserRawData = async (req, res) => {
         dateOfBirth: user.date_of_Birth,
         pfp: user.user_image.pfp_name,
         cover: user.user_image.cover_name,
-        affiliation: (0, utils_1.constantToCapitalize)(user.affiliation),
-        gender: (0, utils_1.constantToCapitalize)(user.gender),
-        province: (0, utils_1.capitalize)(user.address.province),
-        municipality: (0, utils_1.capitalize)(user.address.municipality),
-        barangay: (0, utils_1.capitalize)(user.address.barangay),
+        affiliation: constantToCapitalize(user.affiliation),
+        gender: constantToCapitalize(user.gender),
+        province: capitalize(user.address.province),
+        municipality: capitalize(user.address.municipality),
+        barangay: capitalize(user.address.barangay),
     };
     return res.code(200).send({
         status: "success",
@@ -397,12 +395,12 @@ const getRecommendedAccountsForNewUser = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        fullname: (0, utils_1.capitalize)(`${user.firstname} ${user.lastname}`),
+        fullname: capitalize(`${user.firstname} ${user.lastname}`),
         cover: user.user_image.cover_name,
         gender: user.gender,
         pfp: user.user_image.pfp_name,
-        affiliation: (0, utils_1.constantToCapitalize)(user.affiliation),
-        address: (0, utils_1.capitalize)(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
+        affiliation: constantToCapitalize(user.affiliation),
+        address: capitalize(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
         bio: user.bio,
         dateOfBirth: user.date_of_Birth,
     }));
@@ -521,12 +519,12 @@ const searchUsers = async (req, res) => {
     let parsedUsersData = usersDoc.map((user) => {
         return {
             id: user.id,
-            fullname: (0, utils_1.capitalize)(`${user.firstname} ${user.lastname}`),
-            affiliation: (0, utils_1.constantToCapitalize)(user.affiliation),
+            fullname: capitalize(`${user.firstname} ${user.lastname}`),
+            affiliation: constantToCapitalize(user.affiliation),
             bio: user.bio || "",
             dateOfBirth: user.date_of_Birth.toDateString(),
-            gender: (0, utils_1.constantToCapitalize)(user.gender),
-            address: (0, utils_1.capitalize)(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
+            gender: constantToCapitalize(user.gender),
+            address: capitalize(`${user.address.barangay}, ${user.address.municipality}, ${user.address.province}`),
             email: user.email,
             username: user.username,
             pfp: user.user_image.pfp_name,
@@ -567,7 +565,7 @@ const verifyUserIfFollowed = async (req, res) => {
 };
 const getFollowers = async (req, res) => {
     let followersDoc;
-    if ((0, checker_1.isValidObjectId)(req.query.targetUserId)) {
+    if (isValidObjectId(req.query.targetUserId)) {
         followersDoc = await req.prisma.user.findUnique({
             where: { id: req.query.targetUserId },
             select: {
@@ -618,13 +616,13 @@ const getFollowers = async (req, res) => {
     const parsedFollowersData = followersDoc?.followers.map((follower) => {
         return {
             id: follower.id,
-            fullname: (0, utils_1.capitalize)(`${follower.firstname} ${follower.lastname}`),
+            fullname: capitalize(`${follower.firstname} ${follower.lastname}`),
             username: follower.username,
             pfp: follower.user_image.pfp_name,
             cover: follower.user_image.cover_name,
             bio: follower.bio,
-            address: (0, utils_1.capitalize)(`${follower.address.barangay}, ${follower.address.municipality}, ${follower.address.province}`),
-            affiliation: (0, utils_1.constantToCapitalize)(follower.affiliation),
+            address: capitalize(`${follower.address.barangay}, ${follower.address.municipality}, ${follower.address.province}`),
+            affiliation: constantToCapitalize(follower.affiliation),
             followedByTheUer: userFollowedAccountsDoc?.following.some((userFollowedAcc) => userFollowedAcc.id === follower.id) ?? false,
         };
     });
@@ -632,7 +630,7 @@ const getFollowers = async (req, res) => {
 };
 const getFollowings = async (req, res) => {
     let followingDoc;
-    if ((0, checker_1.isValidObjectId)(req.query.targetUserId)) {
+    if (isValidObjectId(req.query.targetUserId)) {
         followingDoc = await req.prisma.user.findUnique({
             where: { id: req.query.targetUserId },
             select: {
@@ -673,13 +671,13 @@ const getFollowings = async (req, res) => {
     const parsedFollowersData = followingDoc?.following.map((follower) => {
         return {
             id: follower.id,
-            fullname: (0, utils_1.capitalize)(`${follower.firstname} ${follower.lastname}`),
+            fullname: capitalize(`${follower.firstname} ${follower.lastname}`),
             username: follower.username,
             pfp: follower.user_image.pfp_name,
             cover: follower.user_image.cover_name,
             bio: follower.bio,
-            address: (0, utils_1.capitalize)(`${follower.address.barangay}, ${follower.address.municipality}, ${follower.address.province}`),
-            affiliation: (0, utils_1.constantToCapitalize)(follower.affiliation),
+            address: capitalize(`${follower.address.barangay}, ${follower.address.municipality}, ${follower.address.province}`),
+            affiliation: constantToCapitalize(follower.affiliation),
         };
     });
     console.log({ parsedFollowersData });
@@ -702,4 +700,4 @@ const userController = {
     getFollowings,
     getFollowers,
 };
-exports.default = userController;
+export default userController;

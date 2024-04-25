@@ -1,5 +1,3 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 const logout = async (_req, res) => {
     res.clearCookie("refreshToken", {
         path: "/refresh_token",
@@ -10,4 +8,4 @@ const logout = async (_req, res) => {
     return res.send({ status: "success", message: "Logout success" });
 };
 const logoutController = { logout };
-exports.default = logoutController;
+export default logoutController;

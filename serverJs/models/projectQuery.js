@@ -1,8 +1,5 @@
-"use strict";
 // const getProjects = async (req: FastifyRequest, res: FastifyReply) => {};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.projectLikeToggle = exports.updateProject = exports.deleteProject = exports.getProjectById = exports.getProjects = exports.createProject = void 0;
-async function createProject({ title, context, tags, media, author_id, }, prisma) {
+export async function createProject({ title, context, tags, media, author_id, }, prisma) {
     await prisma.project.create({
         data: {
             title,
@@ -17,12 +14,10 @@ async function createProject({ title, context, tags, media, author_id, }, prisma
         },
     });
 }
-exports.createProject = createProject;
-async function getProjects(prisma) {
+export async function getProjects(prisma) {
     return await prisma.project.findMany({});
 }
-exports.getProjects = getProjects;
-async function getProjectById(id, prisma) {
+export async function getProjectById(id, prisma) {
     return await prisma.project.findUnique({
         where: {
             id,
@@ -30,8 +25,7 @@ async function getProjectById(id, prisma) {
         },
     });
 }
-exports.getProjectById = getProjectById;
-async function deleteProject(id, prisma) {
+export async function deleteProject(id, prisma) {
     return await prisma.project.update({
         where: {
             id,
@@ -41,8 +35,7 @@ async function deleteProject(id, prisma) {
         },
     });
 }
-exports.deleteProject = deleteProject;
-async function updateProject({ projectId, title, context, tags, media, }, prisma) {
+export async function updateProject({ projectId, title, context, tags, media, }, prisma) {
     const oldProjectPost = await prisma.project.findUnique({
         where: { id: projectId },
     });
@@ -60,8 +53,7 @@ async function updateProject({ projectId, title, context, tags, media, }, prisma
         },
     });
 }
-exports.updateProject = updateProject;
-async function projectLikeToggle({ userId, projectId }, prisma) {
+export async function projectLikeToggle({ userId, projectId }, prisma) {
     const data = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -101,4 +93,3 @@ async function projectLikeToggle({ userId, projectId }, prisma) {
             },
         });
 }
-exports.projectLikeToggle = projectLikeToggle;

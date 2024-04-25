@@ -1,23 +1,17 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.authorize = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const node_path_1 = __importDefault(require("node:path"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const client_1 = require("@prisma/client");
-dotenv_1.default.config({
-    path: node_path_1.default.resolve(import.meta.dirname, "../.env"),
+import jwt from "jsonwebtoken";
+import path from "node:path";
+import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
+dotenv.config({
+    path: path.resolve(import.meta.dirname, "../.env"),
 });
-const prisma = new client_1.PrismaClient();
+const prisma = new PrismaClient();
 /**
  * Checks if user is Authorize
  * @param userRole Role of the user
  * @returns
  */
-const authorize = (userRole) => {
+export const authorize = (userRole) => {
     return async (req, res) => {
         const accessToken = req.headers.authorization?.split(" ")[1];
         if (!accessToken)
@@ -26,7 +20,7 @@ const authorize = (userRole) => {
                 message: "Unauthorized",
                 error: "No AccessToken",
             });
-        const payload = jsonwebtoken_1.default.verify(accessToken, process.env.ACCESS_TOKEN_KEY);
+        const payload = jwt.verify(accessToken, process.env.ACCESS_TOKEN_KEY);
         // check if user exist and roles is match
         const userExist = await req.prisma.user.findUnique({
             where: { id: payload.id },
@@ -44,7 +38,6 @@ const authorize = (userRole) => {
         req.userId = payload.id;
     };
 };
-exports.authorize = authorize;
 /**
  * Checks if user is authorize in websockets. A middleware for socket.io namespace
  * @param userType Role of the user

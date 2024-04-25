@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.notificationController = void 0;
-const utils_1 = require("../utils");
+import { capitalize } from "../utils";
 const getNotifications = async (req, res) => {
     const notifDocument = await req.prisma.notification.findMany({
         where: {
@@ -44,7 +41,7 @@ const getNotifications = async (req, res) => {
             notifFrom_id: notif.notifFrom_id,
             notifBy: {
                 id: notif.NotifFrom.id,
-                fullname: (0, utils_1.capitalize)(`${notif.NotifFrom.firstname} ${notif.NotifFrom.lastname}`),
+                fullname: capitalize(`${notif.NotifFrom.firstname} ${notif.NotifFrom.lastname}`),
                 username: notif.NotifFrom.username,
                 pfp: notif.NotifFrom.user_image.pfp_name,
             },
@@ -56,4 +53,4 @@ const getNotifications = async (req, res) => {
         data: parsedNotifDoc,
     });
 };
-exports.notificationController = { getNotifications };
+export const notificationController = { getNotifications };

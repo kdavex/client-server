@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = void 0;
-const bcrypt_1 = require("bcrypt");
-const tokens_ts_1 = require("../utils/tokens.ts");
-const login = async (req, res) => {
+import { compare } from "bcrypt";
+import { createAccessToken, createRefreshToken, sendAccessToken, sendRefreshToken, } from "../utils/tokens.ts";
+export const login = async (req, res) => {
     // TODO add validation
     if (req.body.usernameOrEmail === undefined)
         return res.code(401).send({
@@ -45,7 +42,7 @@ const login = async (req, res) => {
         });
     const userFullname = userExist.firstname + " " + userExist.lastname;
     // Check if password is match
-    const match = await (0, bcrypt_1.compare)(req.body.password, userExist.credential.password);
+    const match = await compare(req.body.password, userExist.credential.password);
     if (!match)
         return res.status(401).send({
             status: "fail",
@@ -53,21 +50,20 @@ const login = async (req, res) => {
             message: "Password is incorrect",
         });
     // Create tokens
-    const accessToken = (0, tokens_ts_1.createAccessToken)({
+    const accessToken = createAccessToken({
         email: userExist.email,
         id: userExist.id,
         userFullname,
         username: userExist.username,
     });
-    const refreshToken = (0, tokens_ts_1.createRefreshToken)({
+    const refreshToken = createRefreshToken({
         email: userExist.email,
         id: userExist.id,
     });
-    (0, tokens_ts_1.sendRefreshToken)(refreshToken, res);
-    return (0, tokens_ts_1.sendAccessToken)({
+    sendRefreshToken(refreshToken, res);
+    return sendAccessToken({
         id: userExist.id,
     }, accessToken, res);
 };
-exports.login = login;
-const loginController = { login: exports.login };
-exports.default = loginController;
+const loginController = { login };
+export default loginController;

@@ -1,15 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationChangeHandler = void 0;
-const dbConnect_1 = require("../dbConnect");
-const mongodb_1 = require("mongodb");
-const utils_1 = require("../../utils");
-const db = await new dbConnect_1.MongodbInstane().getDbInstance();
+import { MongodbInstane } from "../dbConnect";
+import { ObjectId } from "mongodb";
+import { capitalize } from "../../utils";
+const db = await new MongodbInstane().getDbInstance();
 // **
 // * Notification Change Handler
 // *  Socket Events:
 // *       [notification/user_id] - Emit notification to the respective user
-const NotificationChangeHandler = (io, socket) => {
+export const NotificationChangeHandler = (io, socket) => {
     const collection = db.collection("Notification");
     const changeStream = collection.watch();
     const sendNotification = async (change) => {
@@ -17,7 +14,7 @@ const NotificationChangeHandler = (io, socket) => {
         let payload = null;
         if (change.operationType === "insert") {
             socketEvent = change.fullDocument.notifTo_id.toString();
-            const notifBy = await db.collection("User").findOne({ _id: new mongodb_1.ObjectId(change.fullDocument.notifFrom_id) }, {
+            const notifBy = await db.collection("User").findOne({ _id: new ObjectId(change.fullDocument.notifFrom_id) }, {
                 projection: {
                     id: 1,
                     firstname: 1,
@@ -39,7 +36,7 @@ const NotificationChangeHandler = (io, socket) => {
                         post_id: change.fullDocument.post_id,
                         notifBy: {
                             id: notifBy._id.toString(),
-                            fullname: (0, utils_1.capitalize)(`${notifBy.firstname} ${notifBy.lastname}`),
+                            fullname: capitalize(`${notifBy.firstname} ${notifBy.lastname}`),
                             username: notifBy.username,
                             pfp: notifBy.user_image.pfp_name,
                         },
@@ -56,7 +53,7 @@ const NotificationChangeHandler = (io, socket) => {
                         comment_id: change.fullDocument.comment_id,
                         notifBy: {
                             id: notifBy._id.toString(),
-                            fullname: (0, utils_1.capitalize)(`${notifBy.firstname} ${notifBy.lastname}`),
+                            fullname: capitalize(`${notifBy.firstname} ${notifBy.lastname}`),
                             username: notifBy.username,
                             pfp: notifBy.user_image.pfp_name,
                         },
@@ -70,7 +67,7 @@ const NotificationChangeHandler = (io, socket) => {
                         notifTo_id: change.fullDocument.notifTo_id,
                         notifBy: {
                             id: notifBy._id.toString(),
-                            fullname: (0, utils_1.capitalize)(`${notifBy.firstname} ${notifBy.lastname}`),
+                            fullname: capitalize(`${notifBy.firstname} ${notifBy.lastname}`),
                             username: notifBy.username,
                             pfp: notifBy.user_image.pfp_name,
                         },
@@ -86,4 +83,3 @@ const NotificationChangeHandler = (io, socket) => {
     };
     changeStream.on("change", sendNotification);
 };
-exports.NotificationChangeHandler = NotificationChangeHandler;

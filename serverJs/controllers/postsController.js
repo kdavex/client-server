@@ -1,10 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const postQuery_1 = require("../models/postQuery");
-const fileManager_1 = require("../utils/fileManager");
-const postQuery_2 = require("../models/postQuery");
-const checker_1 = require("../utils/checker");
-const utils_1 = require("../utils");
+import { createPost as createPostQuery } from "../models/postQuery";
+import { moveFile } from "../utils/fileManager";
+import { likePostTogggle as likePostToggleFnc } from "../models/postQuery";
+import { isValidObjectId } from "../utils/checker";
+import { capitalize } from "../utils";
 const createPost = async (req, res) => {
     const userId = req.userId; // Edit from "string" to "req.user.id
     // TODO add validation
@@ -15,14 +13,14 @@ const createPost = async (req, res) => {
         });
     // Create Post
     try {
-        await (0, postQuery_1.createPost)({ ...req.body, userId }, req.prisma);
+        await createPostQuery({ ...req.body, userId }, req.prisma);
     }
     catch (error) {
         console.error(error);
         return res.code(500).send({ status: "fail", message: "Internal Error" });
     }
     // Move tmp file to the public folder
-    req.body.media.forEach(async (elem) => await (0, fileManager_1.moveFile)([elem.filename], "tmp", "public"));
+    req.body.media.forEach(async (elem) => await moveFile([elem.filename], "tmp", "public"));
     return res.code(201).send({ status: "success", message: "Post created" });
 };
 const updatePost = async (req, res) => {
@@ -58,7 +56,7 @@ const updatePost = async (req, res) => {
     }
     // Move tmp file to the public folder
     if (req.body.media)
-        req.body.media.forEach(async (elem) => await (0, fileManager_1.moveFile)([elem.filename], "tmp", "public"));
+        req.body.media.forEach(async (elem) => await moveFile([elem.filename], "tmp", "public"));
     return res.code(200).send({ status: "success", message: "Post updated" });
 };
 const getPosts = async (req, res) => {
@@ -178,7 +176,7 @@ const getAllUserPost = async (req, res) => {
             },
         },
     });
-    if ((0, checker_1.isValidObjectId)(req.params.usernameOrId) && posts.length === 0) {
+    if (isValidObjectId(req.params.usernameOrId) && posts.length === 0) {
         posts = await req.prisma.post.findMany({
             where: {
                 author: {
@@ -244,14 +242,14 @@ const getAllUserPost = async (req, res) => {
             tags: post.tags,
             comments: post.comments.map((comment) => {
                 return {
-                    id: comment.id,
+                    id: comment.id, // Fix: Access the 'id' property from the 'comment' object
                     content: comment.content,
                     createdAt: comment.createdAt,
                     up_voted_by_users_id: comment.up_voted_by_users_id,
                     down_voted_by_users_id: comment.down_voted_by_users_id,
                     author: {
                         id: comment.author.id,
-                        fullname: (0, utils_1.capitalize)(`${comment.author.firstname} ${comment.author.lastname}`),
+                        fullname: capitalize(`${comment.author.firstname} ${comment.author.lastname}`),
                         bio: comment.author.bio,
                         affiliation: comment.author.affiliation,
                         cover: comment.author.user_image.cover_name,
@@ -263,12 +261,12 @@ const getAllUserPost = async (req, res) => {
             }),
             author: {
                 id: post.author.id,
-                fullname: (0, utils_1.capitalize)(`${post.author.firstname} ${post.author.lastname}`),
+                fullname: capitalize(`${post.author.firstname} ${post.author.lastname}`),
                 bio: post.author.bio,
                 affiliation: post.author.affiliation,
                 cover: post.author.user_image.cover_name,
                 pfp: post.author.user_image.pfp_name,
-                address: (0, utils_1.capitalize)(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
+                address: capitalize(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
                 username: post.author.username,
             },
         };
@@ -371,14 +369,14 @@ const getAllPosts = async (req, res) => {
             tags: post.tags,
             comments: post.comments.map((comment) => {
                 return {
-                    id: comment.id,
+                    id: comment.id, // Fix: Access the 'id' property from the 'comment' object
                     content: comment.content,
                     createdAt: comment.createdAt,
                     up_voted_by_users_id: comment.up_voted_by_users_id,
                     down_voted_by_users_id: comment.down_voted_by_users_id,
                     author: {
                         id: comment.author.id,
-                        fullname: (0, utils_1.capitalize)(`${comment.author.firstname} ${comment.author.lastname}`),
+                        fullname: capitalize(`${comment.author.firstname} ${comment.author.lastname}`),
                         bio: comment.author.bio,
                         affiliation: comment.author.affiliation,
                         cover: comment.author.user_image.cover_name,
@@ -390,12 +388,12 @@ const getAllPosts = async (req, res) => {
             }),
             author: {
                 id: post.author.id,
-                fullname: (0, utils_1.capitalize)(`${post.author.firstname} ${post.author.lastname}`),
+                fullname: capitalize(`${post.author.firstname} ${post.author.lastname}`),
                 bio: post.author.bio,
                 affiliation: post.author.affiliation,
                 cover: post.author.user_image.cover_name,
                 pfp: post.author.user_image.pfp_name,
-                address: (0, utils_1.capitalize)(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
+                address: capitalize(`${post.author.address.barangay}, ${post.author.address.municipality}, ${post.author.address.province}`),
                 username: post.author.username,
             },
         };
@@ -434,7 +432,7 @@ const likePostToggle = async (req, res) => {
             message: "Missing body parameter",
             error: "Missing postId field",
         });
-    await (0, postQuery_2.likePostTogggle)({ postId: req.body.postId, userId: req.userId }, req.prisma);
+    await likePostToggleFnc({ postId: req.body.postId, userId: req.userId }, req.prisma);
     const postExist = await req.prisma.post.findUnique({
         where: {
             id: req.body.postId,
@@ -550,23 +548,23 @@ const getPostById = async (req, res) => {
         author: {
             id: postDoc.author.id,
             affilitaion: postDoc.author.affiliation,
-            fullname: (0, utils_1.capitalize)(`${postDoc.author.firstname} ${postDoc.author.lastname}`),
+            fullname: capitalize(`${postDoc.author.firstname} ${postDoc.author.lastname}`),
             username: postDoc.author.username,
             pfp: postDoc.author.user_image.pfp_name,
             cover: postDoc.author.user_image.cover_name,
-            address: (0, utils_1.capitalize)(`${postDoc.author.address.barangay}, ${postDoc.author.address.municipality}, ${postDoc.author.address.province}`),
+            address: capitalize(`${postDoc.author.address.barangay}, ${postDoc.author.address.municipality}, ${postDoc.author.address.province}`),
         },
         comments: postDoc.comments.map((comment) => {
             return {
                 ...comment,
                 author: {
                     id: comment.author.id,
-                    fullname: (0, utils_1.capitalize)(`${comment.author.firstname} ${comment.author.lastname}`),
+                    fullname: capitalize(`${comment.author.firstname} ${comment.author.lastname}`),
                     username: comment.author.username,
                     bio: comment.author.bio,
                     pfp: comment.author.user_image.pfp_name,
                     cover: comment.author.user_image.cover_name,
-                    address: (0, utils_1.capitalize)(`${comment.author.address.barangay}, ${comment.author.address.municipality}, ${comment.author.address.province}`),
+                    address: capitalize(`${comment.author.address.barangay}, ${comment.author.address.municipality}, ${comment.author.address.province}`),
                     affiliation: comment.author.affiliation,
                 },
             };
@@ -586,4 +584,4 @@ const postController = {
     getTopTags,
     getPostById,
 };
-exports.default = postController;
+export default postController;

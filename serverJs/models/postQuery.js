@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.likePostTogggle = exports.createPost = void 0;
-const createPost = async ({ title, context, tags, media, userId }, prisma) => {
+export const createPost = async ({ title, context, tags, media, userId }, prisma) => {
     await prisma.user.update({
         where: { id: userId },
         data: {
@@ -16,8 +13,7 @@ const createPost = async ({ title, context, tags, media, userId }, prisma) => {
         },
     });
 };
-exports.createPost = createPost;
-const likePostTogggle = async ({ postId, userId }, prisma) => {
+export const likePostTogggle = async ({ postId, userId }, prisma) => {
     const [user, post] = await prisma.$transaction([
         prisma.user.findUnique({
             where: { id: userId },
@@ -94,4 +90,3 @@ const likePostTogggle = async ({ postId, userId }, prisma) => {
         }
     }
 };
-exports.likePostTogggle = likePostTogggle;

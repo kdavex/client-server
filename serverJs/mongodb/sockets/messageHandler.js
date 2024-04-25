@@ -1,16 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.messageChangeHandler = void 0;
-const dbConnect_1 = require("../dbConnect");
-const models_1 = require("../../models");
-const client_1 = require("@prisma/client");
-const utils_1 = require("../../utils");
-const db = await new dbConnect_1.MongodbInstane().getDbInstance();
+import { MongodbInstane } from "../dbConnect";
+import { updateUnreadMessagesCount } from "../../models";
+import { PrismaClient } from "@prisma/client";
+import { capitalize } from "../../utils";
+const db = await new MongodbInstane().getDbInstance();
 // ** Message Change Handler
 // *  Socket Events:
 // *       [messgage/converse_id] - Emit message to the respective conversation
 // *       [converseList/recipient_id & author_id] - Emit message to the respective conversation
-const messageChangeHandler = (io, socket) => {
+export const messageChangeHandler = (io, socket) => {
     const collection = db.collection("Message");
     const changeStream = collection.watch();
     const sendMessage = (change) => {
@@ -42,7 +39,7 @@ const messageChangeHandler = (io, socket) => {
         if (change.operationType === "insert") {
             socketEventForAuthor = change.fullDocument.author_id;
             socketEventForRecipient = change.fullDocument.recipient_id;
-            const prisma = new client_1.PrismaClient();
+            const prisma = new PrismaClient();
             const recipientInfo = await prisma.user.findUnique({
                 where: {
                     id: change.fullDocument.recipient_id,
@@ -66,7 +63,7 @@ const messageChangeHandler = (io, socket) => {
                 status: change.fullDocument.status,
                 recipient_id: change.fullDocument.recipient_id,
                 pfp: recipientInfo.user_image.pfp_name,
-                fullname: (0, utils_1.capitalize)(`${recipientInfo.firstname} ${recipientInfo.lastname}`),
+                fullname: capitalize(`${recipientInfo.firstname} ${recipientInfo.lastname}`),
             };
         }
         if (!payload)
@@ -79,7 +76,7 @@ const messageChangeHandler = (io, socket) => {
     const readMessage = async (payload, res) => {
         try {
             if (payload.user_id !== undefined && payload.converse_id !== undefined) {
-                await (0, models_1.updateUnreadMessagesCount)(payload.user_id, payload.converse_id);
+                await updateUnreadMessagesCount(payload.user_id, payload.converse_id);
                 res({ status: "success" });
             }
             else
@@ -94,4 +91,3 @@ const messageChangeHandler = (io, socket) => {
     changeStream.on("change", sendMessage);
     socket.on("read_message", readMessage);
 };
-exports.messageChangeHandler = messageChangeHandler;

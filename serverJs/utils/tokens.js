@@ -1,26 +1,18 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyRefreshToken = exports.verifyAccessToken = exports.sendAccessToken = exports.sendRefreshToken = exports.createRefreshToken = exports.createAccessToken = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const node_path_1 = __importDefault(require("node:path"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const jwtOption_ts_1 = require("../config/jwtOption.ts");
-require("@fastify/cookie");
-dotenv_1.default.config({
-    path: node_path_1.default.resolve(import.meta.dirname, "../.env"),
+import jwt from "jsonwebtoken";
+import path from "node:path";
+import dotenv from "dotenv";
+import { accessTokenOption, refreshTokenOptions } from "../config/jwtOption.ts";
+import "@fastify/cookie";
+dotenv.config({
+    path: path.resolve(import.meta.dirname, "../.env"),
 });
-const createAccessToken = (userInfo) => {
-    return jsonwebtoken_1.default.sign(userInfo, process.env.ACCESS_TOKEN_KEY, jwtOption_ts_1.accessTokenOption);
+export const createAccessToken = (userInfo) => {
+    return jwt.sign(userInfo, process.env.ACCESS_TOKEN_KEY, accessTokenOption);
 };
-exports.createAccessToken = createAccessToken;
-const createRefreshToken = (userInfo) => {
-    return jsonwebtoken_1.default.sign(userInfo, process.env.REFRESH_TOKEN_KEY, jwtOption_ts_1.refreshTokenOptions);
+export const createRefreshToken = (userInfo) => {
+    return jwt.sign(userInfo, process.env.REFRESH_TOKEN_KEY, refreshTokenOptions);
 };
-exports.createRefreshToken = createRefreshToken;
-const sendRefreshToken = (token, res) => {
+export const sendRefreshToken = (token, res) => {
     res.setCookie("refreshToken", token, {
         httpOnly: true,
         path: "/refresh_token",
@@ -29,16 +21,12 @@ const sendRefreshToken = (token, res) => {
         partitioned: true,
     });
 };
-exports.sendRefreshToken = sendRefreshToken;
-const sendAccessToken = (userInfo, token, res) => {
+export const sendAccessToken = (userInfo, token, res) => {
     return res.send({ status: "success", accessToken: token, ...userInfo });
 };
-exports.sendAccessToken = sendAccessToken;
-const verifyAccessToken = (token) => {
-    return jsonwebtoken_1.default.verify(token, process.env.ACCESS_TOKEN_KEY);
+export const verifyAccessToken = (token) => {
+    return jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
 };
-exports.verifyAccessToken = verifyAccessToken;
-const verifyRefreshToken = (token) => {
-    return jsonwebtoken_1.default.verify(token, process.env.REFRESH_TOKEN_KEY);
+export const verifyRefreshToken = (token) => {
+    return jwt.verify(token, process.env.REFRESH_TOKEN_KEY);
 };
-exports.verifyRefreshToken = verifyRefreshToken;

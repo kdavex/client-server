@@ -1,34 +1,29 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const fastify_1 = __importDefault(require("fastify"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const node_path_1 = __importDefault(require("node:path"));
-const cookie_1 = __importDefault(require("@fastify/cookie"));
-require("@fastify/multipart");
-const multipart_1 = __importDefault(require("@fastify/multipart"));
-const static_1 = __importDefault(require("@fastify/static"));
-const cors_1 = __importDefault(require("@fastify/cors"));
-const fastify_socket_io_1 = __importDefault(require("fastify-socket.io"));
-const config_1 = require("./config");
-const routes_1 = require("./routes");
-const hooks_1 = require("./hooks");
-const converse_1 = __importDefault(require("./routes/converse"));
-const sockets_1 = require("./mongodb/sockets");
-const notificationHandler_1 = require("./mongodb/sockets/notificationHandler");
+import fastify from "fastify";
+import dotenv from "dotenv";
+import path from "node:path";
+import fastifyCookie from "@fastify/cookie";
+import "@fastify/multipart";
+import fastifyMultipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
+import fastifyCors from "@fastify/cors";
+import fastifySocketIO from "fastify-socket.io";
+import { corsOption, multipartOption, statisCoption, socketIOOption, cookieOption, } from "./config";
+import { UsersRoute, PostsRoute, NotificationRoute, LoginRoute, LogoutRoute, RefreshTokenRoute, SearchRoute, ProjectsRoute, CommentsRoute, TestRoute, } from "./routes";
+import { onRequestHook } from "./hooks";
+import ConverseRoute from "./routes/converse";
+import { messageChangeHandler } from "./mongodb/sockets";
+import { NotificationChangeHandler } from "./mongodb/sockets/notificationHandler";
 // import { authorizeWS } from "./middlewares/authorize";
-dotenv_1.default.config({
-    path: node_path_1.default.resolve(import.meta.dirname, ".env"),
+dotenv.config({
+    path: path.resolve(import.meta.dirname, ".env"),
 });
-const app = (0, fastify_1.default)();
+const app = fastify();
 // ===== CORE PLUGINS ===== //
-app.register(cors_1.default, config_1.corsOption);
-app.register(multipart_1.default, config_1.multipartOption);
-app.register(cookie_1.default, config_1.cookieOption);
-app.register(static_1.default, config_1.statisCoption);
-app.register(fastify_socket_io_1.default, config_1.socketIOOption);
+app.register(fastifyCors, corsOption);
+app.register(fastifyMultipart, multipartOption);
+app.register(fastifyCookie, cookieOption);
+app.register(fastifyStatic, statisCoption);
+app.register(fastifySocketIO, socketIOOption);
 // ======= Decorators ======== //
 // ===== HOOKS ===== //
 app.addHook("onError", (_req, _res, error, done) => {
@@ -48,19 +43,19 @@ app.addHook("preValidation", (req, _res, done) => {
     });
     done();
 });
-app.addHook("onRequest", hooks_1.onRequestHook);
+app.addHook("onRequest", onRequestHook);
 // ====== ROUTES ===== //
-app.register(routes_1.UsersRoute, { prefix: "/users" });
-app.register(routes_1.TestRoute);
-app.register(routes_1.LoginRoute, { prefix: "/login" });
-app.register(routes_1.LogoutRoute, { prefix: "/logout" });
-app.register(routes_1.RefreshTokenRoute, { prefix: "/refresh_token" });
-app.register(routes_1.PostsRoute, { prefix: "/posts" });
-app.register(routes_1.CommentsRoute, { prefix: "/comments" });
-app.register(routes_1.ProjectsRoute, { prefix: "/projects" });
-app.register(routes_1.SearchRoute, { prefix: "/search" });
-app.register(converse_1.default, { prefix: "/converse" });
-app.register(routes_1.NotificationRoute, {
+app.register(UsersRoute, { prefix: "/users" });
+app.register(TestRoute);
+app.register(LoginRoute, { prefix: "/login" });
+app.register(LogoutRoute, { prefix: "/logout" });
+app.register(RefreshTokenRoute, { prefix: "/refresh_token" });
+app.register(PostsRoute, { prefix: "/posts" });
+app.register(CommentsRoute, { prefix: "/comments" });
+app.register(ProjectsRoute, { prefix: "/projects" });
+app.register(SearchRoute, { prefix: "/search" });
+app.register(ConverseRoute, { prefix: "/converse" });
+app.register(NotificationRoute, {
     prefix: "/notifications",
 });
 app.ready((err) => {
@@ -68,6 +63,9 @@ app.ready((err) => {
         throw err;
     app.io.on("connection", onConnection);
     // Change Stream Handlers
+});
+app.get("/", async (req, res) => {
+    return { status: "success", message: "Welcome to the API" };
 });
 app.listen({
     port: parseInt(process.env.SERVER_PORT),
@@ -86,8 +84,8 @@ const onConnection = (socket) => {
         socket.broadcast.emit("test", message);
     });
     console.log("Socket Connected");
-    (0, sockets_1.messageChangeHandler)(app.io, socket);
-    (0, notificationHandler_1.NotificationChangeHandler)(app.io, socket);
+    messageChangeHandler(app.io, socket);
+    NotificationChangeHandler(app.io, socket);
 };
 app.get("/socket", (req, res) => {
     app.io.emit("secured", "This is a secured message");

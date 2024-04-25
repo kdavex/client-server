@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.requestFieldChecker = void 0;
-function requestFieldChecker(fields, req) {
+export function requestFieldChecker(fields, req) {
     const error = [];
     Object.entries(req.body).forEach(([key, value]) => {
         if (fields.includes(key) && (value === undefined || value === null))
@@ -9,4 +6,3 @@ function requestFieldChecker(fields, req) {
     });
     return error;
 }
-exports.requestFieldChecker = requestFieldChecker;

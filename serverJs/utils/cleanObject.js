@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cleanObject = void 0;
 /**
  * Recursively Removes all null, undefined, and empty string values from an object
  * @param obj Object to clean
  */
-function cleanObject(obj) {
+export function cleanObject(obj) {
     for (const [key, value] of Object.entries(obj)) {
         if (value instanceof Object) {
             cleanObject(value);
@@ -17,4 +14,3 @@ function cleanObject(obj) {
             delete obj[key];
     }
 }
-exports.cleanObject = cleanObject;

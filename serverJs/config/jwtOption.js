@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshTokenOptions = exports.accessTokenOption = void 0;
-exports.accessTokenOption = {
+export const accessTokenOption = {
     expiresIn: "1d",
 };
-exports.refreshTokenOptions = {
+export const refreshTokenOptions = {
     expiresIn: "7d",
 };

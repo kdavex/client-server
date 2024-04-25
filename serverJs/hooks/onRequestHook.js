@@ -1,10 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onRequestHook = void 0;
-const client_1 = require("@prisma/client");
-function onRequestHook(req, _res, done) {
+import { PrismaClient } from "@prisma/client";
+export function onRequestHook(req, _res, done) {
     // Decorators
-    req.prisma = new client_1.PrismaClient();
+    req.prisma = new PrismaClient();
     done();
 }
-exports.onRequestHook = onRequestHook;

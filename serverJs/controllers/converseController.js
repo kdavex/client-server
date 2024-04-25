@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.converseController = exports.getRecipient = exports.getConverseList = exports.getConverse = exports.searchConversation = exports.createConverse = exports.sendMessage = void 0;
-const mongodb_1 = require("mongodb");
-const converseOperations_js_1 = require("../models/converseOperations.js");
-const stringFormatter_ts_1 = require("../utils/stringFormatter.ts");
-const fileManager_ts_1 = require("../utils/fileManager.ts");
-const sendMessage = async (req, res) => {
+import { ObjectId } from "mongodb";
+import { converseDocExistByMessengersId } from "../models/converseOperations.js";
+import { capitalize } from "../utils/stringFormatter.ts";
+import { moveFile, removeFiles } from "../utils/fileManager.ts";
+export const sendMessage = async (req, res) => {
     // Check if body is complete
     if (req.body.recipient_id == undefined ||
         (req.body.chat === undefined && req.body.media === undefined))
@@ -40,7 +37,7 @@ const sendMessage = async (req, res) => {
     });
     let converseDoc;
     try {
-        const converseDocExist = await (0, converseOperations_js_1.converseDocExistByMessengersId)([
+        const converseDocExist = await converseDocExistByMessengersId([
             req.body.recipient_id,
             req.userId,
         ]);
@@ -68,7 +65,7 @@ const sendMessage = async (req, res) => {
             update: {
                 messages: {
                     create: {
-                        id: new mongodb_1.ObjectId().toHexString(),
+                        id: new ObjectId().toHexString(),
                         author_id: req.userId,
                         type: req.body.type,
                         chat: req.body.chat,
@@ -84,24 +81,22 @@ const sendMessage = async (req, res) => {
     }
     catch (error) {
         console.error(error);
-        (0, fileManager_ts_1.removeFiles)(req.body.media?.map((media) => media.filename) || [], "tmp");
+        removeFiles(req.body.media?.map((media) => media.filename) || [], "tmp");
         return res
             .status(500)
             .send({ status: "fail", message: "Internal Server Error" });
     }
     // Save media to public folder
     if (req.body.type !== "TEXT")
-        (0, fileManager_ts_1.moveFile)(req.body.media?.map((media) => media.filename) || [], "tmp", "public");
+        moveFile(req.body.media?.map((media) => media.filename) || [], "tmp", "public");
     return res.code(201).send({
         status: "success",
         converseId: converseDoc.id,
         message: "Message Saved",
     });
 };
-exports.sendMessage = sendMessage;
-const createConverse = async (req, res) => { };
-exports.createConverse = createConverse;
-const searchConversation = async (req, reply) => {
+export const createConverse = async (req, res) => { };
+export const searchConversation = async (req, reply) => {
     const converseDoc = await req.prisma.converse.findFirst({
         where: {
             messengers_id: { hasEvery: [req.query.recipientId, req.userId] },
@@ -115,8 +110,7 @@ const searchConversation = async (req, reply) => {
     }
     return reply.code(200).send({ stauts: "ok", converseId: converseDoc.id });
 };
-exports.searchConversation = searchConversation;
-const getConverse = async (req, res) => {
+export const getConverse = async (req, res) => {
     const converseDoc = await req.prisma.converse.findUnique({
         where: {
             id: req.query.converseId,
@@ -144,7 +138,7 @@ const getConverse = async (req, res) => {
     let reecipiendInfo = converseDoc.messengers.find((messenger) => messenger.id !== req.userId);
     const parsedConverseDoc = {
         reecipiendInfo: {
-            fullname: (0, stringFormatter_ts_1.capitalize)(`${reecipiendInfo?.firstname} ${reecipiendInfo?.lastname}`),
+            fullname: capitalize(`${reecipiendInfo?.firstname} ${reecipiendInfo?.lastname}`),
             username: reecipiendInfo?.username,
             pfp: reecipiendInfo?.user_image.pfp_name,
             id: reecipiendInfo?.id,
@@ -153,8 +147,7 @@ const getConverse = async (req, res) => {
     };
     return res.code(200).send({ status: "ok", data: parsedConverseDoc });
 };
-exports.getConverse = getConverse;
-const getConverseList = async (req, res) => {
+export const getConverseList = async (req, res) => {
     // Get converse doc list
     const conversesDoc = await req.prisma.converse.findMany({
         where: {
@@ -212,8 +205,7 @@ const getConverseList = async (req, res) => {
     });
     return res.code(200).send({ status: "ok", data: parseConversesDoc });
 };
-exports.getConverseList = getConverseList;
-const getRecipient = async (req, res) => {
+export const getRecipient = async (req, res) => {
     const recipientDoc = await req.prisma.converse.findUnique({
         where: {
             id: req.query.converseId,
@@ -241,13 +233,12 @@ const getRecipient = async (req, res) => {
         return res.code(404).send({ status: "fail", message: "Not Found" });
     const pareseReicipientDoc = {
         id: recipientDoc.messengers[0].id,
-        fullname: (0, stringFormatter_ts_1.capitalize)(`${recipientDoc?.messengers[0].firstname} ${recipientDoc?.messengers[0].lastname}`),
+        fullname: capitalize(`${recipientDoc?.messengers[0].firstname} ${recipientDoc?.messengers[0].lastname}`),
         username: recipientDoc.messengers[0].username,
         pfp: recipientDoc.messengers[0].user_image.pfp_name,
     };
     return res.code(200).send({ status: "ok", data: pareseReicipientDoc });
 };
-exports.getRecipient = getRecipient;
 const getConverseMedia = async (req, reply) => {
     console.log({ query: req.query, tsest: "Hello World" });
     const mediaList = await req.prisma.message.findMany({
@@ -270,11 +261,11 @@ const getConverseMedia = async (req, reply) => {
     });
     return reply.code(200).send({ status: "ok", data: mediaList });
 };
-exports.converseController = {
-    sendMessage: exports.sendMessage,
-    searchConversation: exports.searchConversation,
-    getConverse: exports.getConverse,
-    getConverseList: exports.getConverseList,
-    getRecipient: exports.getRecipient,
+export const converseController = {
+    sendMessage,
+    searchConversation,
+    getConverse,
+    getConverseList,
+    getRecipient,
     getConverseMedia,
 };

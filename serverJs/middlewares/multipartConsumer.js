@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.arbitraryMultipartConsumer = exports.multipartConsumer = void 0;
-const fileManager_1 = require("../utils/fileManager");
+import { storeFile } from "../utils/fileManager";
 /**
  * Multipart Consumer for non-arbitrary files and fields
  * body type = Record<string, string>
  * @param req
  * @param res
  */
-async function multipartConsumer(req, res) {
+export async function multipartConsumer(req, res) {
     let body = {};
     if (!req.isMultipart() || req.isMultipart() === undefined)
         return;
@@ -27,7 +24,7 @@ async function multipartConsumer(req, res) {
                     part.file.on("end", () => { });
                     continue;
                 }
-                (0, fileManager_1.storeFile)(part, "tmp")
+                storeFile(part, "tmp")
                     .then((fileInfo) => {
                     body[part.fieldname] = fileInfo;
                 })
@@ -51,7 +48,6 @@ async function multipartConsumer(req, res) {
         console.log({ body });
     }
 }
-exports.multipartConsumer = multipartConsumer;
 /**
  * Multipart Consumer for arbitrary numner of files and fields
  * body type = Record<string, string> & media: {caption?: string, filename: string}[]
@@ -60,7 +56,7 @@ exports.multipartConsumer = multipartConsumer;
  * @param res
  * @returns
  */
-async function arbitraryMultipartConsumer(req, res) {
+export async function arbitraryMultipartConsumer(req, res) {
     console.log({ isMultipart: req.isMultipart() });
     if (!req.isMultipart() || req.isMultipart() === undefined)
         return;
@@ -95,10 +91,10 @@ async function arbitraryMultipartConsumer(req, res) {
                     if (media[hash] === undefined)
                         media[hash] = {
                             caption: null,
-                            filename: (await (0, fileManager_1.storeFile)(part, "tmp")).filename,
+                            filename: (await storeFile(part, "tmp")).filename,
                         };
                     else
-                        media[hash].filename = (await (0, fileManager_1.storeFile)(part, "tmp")).filename;
+                        media[hash].filename = (await storeFile(part, "tmp")).filename;
                 }
             }
         }
@@ -115,5 +111,4 @@ async function arbitraryMultipartConsumer(req, res) {
         };
     }
 }
-exports.arbitraryMultipartConsumer = arbitraryMultipartConsumer;
 // function partsConsumer(pstyd )

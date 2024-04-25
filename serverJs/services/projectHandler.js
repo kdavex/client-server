@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.projectPutOnResponeseHandler = exports.projectPostOnresponseHander = exports.projectsCustomMultipartConsumer = void 0;
-const fileManager_ts_1 = require("../utils/fileManager.ts");
+import { removeFiles, storeFile } from "../utils/fileManager.ts";
 // *This Multipart consumer is for posts with meedia that contains each caption in the image
 /**
  * Custom Multipart Consumer for Posts
@@ -10,7 +7,7 @@ const fileManager_ts_1 = require("../utils/fileManager.ts");
  * @param res
  * @returns
  */
-async function projectsCustomMultipartConsumer(req, res) {
+export async function projectsCustomMultipartConsumer(req, res) {
     // console.log({ body: req.body });
     if (!req.isMultipart() || req.isMultipart() === undefined)
         return;
@@ -43,10 +40,10 @@ async function projectsCustomMultipartConsumer(req, res) {
                     if (media[hash] === undefined)
                         media[hash] = {
                             caption: null,
-                            filename: (await (0, fileManager_ts_1.storeFile)(part, "tmp")).filename,
+                            filename: (await storeFile(part, "tmp")).filename,
                         };
                     else
-                        media[hash].filename = (await (0, fileManager_ts_1.storeFile)(part, "tmp")).filename;
+                        media[hash].filename = (await storeFile(part, "tmp")).filename;
                 }
             }
         }
@@ -62,21 +59,19 @@ async function projectsCustomMultipartConsumer(req, res) {
         };
     }
 }
-exports.projectsCustomMultipartConsumer = projectsCustomMultipartConsumer;
-async function projectPostOnresponseHander(req, res) {
+export async function projectPostOnresponseHander(req, res) {
     // Remove Files From Temp Folder
     if (res.statusCode === 201)
         return;
     req.body.media.forEach((elem) => {
         if (elem.filename !== null)
-            (0, fileManager_ts_1.removeFiles)([elem.filename], "tmp");
+            removeFiles([elem.filename], "tmp");
     });
 }
-exports.projectPostOnresponseHander = projectPostOnresponseHander;
 /**
  * Remove Files From Temp Folder
  */
-async function projectPutOnResponeseHandler(req, res) {
+export async function projectPutOnResponeseHandler(req, res) {
     // Remove Files From Temp Folder
     if (res.statusCode === 200)
         return;
@@ -84,7 +79,6 @@ async function projectPutOnResponeseHandler(req, res) {
         return;
     req.body.media.forEach((elem) => {
         if (elem.filename !== null)
-            (0, fileManager_ts_1.removeFiles)([elem.filename], "tmp");
+            removeFiles([elem.filename], "tmp");
     });
 }
-exports.projectPutOnResponeseHandler = projectPutOnResponeseHandler;

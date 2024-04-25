@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.replyComment = exports.createComment = exports.getCommment = exports.upVoteToggle = exports.downVoteToggle = exports.testCommentQuery = exports.commentExist = void 0;
-const mongodb_1 = require("mongodb");
-async function commentExist({ commentId, }, prisma) {
+import { ObjectId } from "mongodb";
+export async function commentExist({ commentId, }, prisma) {
     const comment = await prisma.comment.findUnique({
         where: { id: commentId },
     });
@@ -10,7 +7,6 @@ async function commentExist({ commentId, }, prisma) {
         return false;
     return true;
 }
-exports.commentExist = commentExist;
 // export async function upVoteTogglex(
 //   {
 //     commentId,
@@ -61,7 +57,7 @@ exports.commentExist = commentExist;
 //     });
 //   }
 // }
-async function testCommentQuery({ userId, commentId }, prisma) {
+export async function testCommentQuery({ userId, commentId }, prisma) {
     await prisma.user.update({
         where: { id: userId },
         data: {
@@ -71,7 +67,6 @@ async function testCommentQuery({ userId, commentId }, prisma) {
         },
     });
 }
-exports.testCommentQuery = testCommentQuery;
 // export async function downVoteTogglex(
 //   { userId, commentId }: { userId: string; commentId: string },
 //   prisma: PrismaClient
@@ -112,7 +107,7 @@ exports.testCommentQuery = testCommentQuery;
 //       },
 //     });
 // }
-async function downVoteToggle({ userId, commentId }, prisma) {
+export async function downVoteToggle({ userId, commentId }, prisma) {
     const [commentReactions, userCommentReactions] = await prisma.$transaction([
         prisma.comment.findUnique({
             where: { id: commentId },
@@ -170,8 +165,7 @@ async function downVoteToggle({ userId, commentId }, prisma) {
         await prisma.$transaction([updateComment, updateUser]);
     }
 }
-exports.downVoteToggle = downVoteToggle;
-async function upVoteToggle({ userId, commentId }, prisma) {
+export async function upVoteToggle({ userId, commentId }, prisma) {
     const [commentReactions, userCommentReactions] = await prisma.$transaction([
         prisma.comment.findUnique({
             where: { id: commentId },
@@ -229,14 +223,12 @@ async function upVoteToggle({ userId, commentId }, prisma) {
         await prisma.$transaction([updateComment, updateUser]);
     }
 }
-exports.upVoteToggle = upVoteToggle;
-async function getCommment(commentId, prisma) {
+export async function getCommment(commentId, prisma) {
     return await prisma.comment.findUnique({
         where: { id: commentId },
     });
 }
-exports.getCommment = getCommment;
-async function createComment({ userId, postId, content, type, }, prisma) {
+export async function createComment({ userId, postId, content, type, }, prisma) {
     await prisma.post.update({
         where: { id: postId },
         data: {
@@ -250,9 +242,8 @@ async function createComment({ userId, postId, content, type, }, prisma) {
         },
     });
 }
-exports.createComment = createComment;
-async function replyComment({ commentId, targetId, author_id, content, type, }, prisma) {
-    const replyId = new mongodb_1.ObjectId().toHexString();
+export async function replyComment({ commentId, targetId, author_id, content, type, }, prisma) {
+    const replyId = new ObjectId().toHexString();
     if (type === "POST")
         await prisma.comment.update({
             where: { id: commentId },
@@ -290,4 +281,3 @@ async function replyComment({ commentId, targetId, author_id, content, type, }, 
             },
         });
 }
-exports.replyComment = replyComment;

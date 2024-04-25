@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.test = void 0;
-const commentsQuery_js_1 = require("../models/commentsQuery.js");
-const mongodb_1 = require("mongodb");
+import { commentExist, upVoteToggle as upVoteToggleQuery, downVoteToggle as downVoteToggleQuery, replyComment as replyCommentFc, testCommentQuery, } from "../models/commentsQuery.js";
+import { ObjectId } from "mongodb";
 const createComment = async (req, res) => {
     if (!req.body?.comment)
         return res.code(400).send({
@@ -19,7 +16,7 @@ const createComment = async (req, res) => {
             status: "fail",
             message: "User is unauthorize",
         });
-    const commentId = new mongodb_1.ObjectId().toHexString();
+    const commentId = new ObjectId().toHexString();
     const commentSuccess = await req.prisma.post.update({
         where: { id: req.body.postId },
         data: {
@@ -177,12 +174,12 @@ const upVoteToggle = async (req, reply) => {
         return reply
             .code(401)
             .send({ status: "fail", message: "User is unauthorize" });
-    const isCommentExist = await (0, commentsQuery_js_1.commentExist)({ commentId: req.body.commentId }, req.prisma);
+    const isCommentExist = await commentExist({ commentId: req.body.commentId }, req.prisma);
     if (!isCommentExist)
         return reply
             .code(404)
             .send({ status: "fail", message: "Comment not found" });
-    await (0, commentsQuery_js_1.upVoteToggle)({ commentId: req.body.commentId, userId: req.userId }, req.prisma);
+    await upVoteToggleQuery({ commentId: req.body.commentId, userId: req.userId }, req.prisma);
     return reply.code(200).send({ status: "success" });
 };
 const downVoteToggle = async (req, reply) => {
@@ -194,12 +191,12 @@ const downVoteToggle = async (req, reply) => {
         return reply
             .code(401)
             .send({ status: "fail", message: "User is unauthorize" });
-    const isCommentExist = await (0, commentsQuery_js_1.commentExist)({ commentId: req.body.commentId }, req.prisma);
+    const isCommentExist = await commentExist({ commentId: req.body.commentId }, req.prisma);
     if (!isCommentExist)
         return reply
             .code(404)
             .send({ status: "fail", message: "Comment not found" });
-    await (0, commentsQuery_js_1.downVoteToggle)({ userId: req.userId, commentId: req.body.commentId }, req.prisma);
+    await downVoteToggleQuery({ userId: req.userId, commentId: req.body.commentId }, req.prisma);
     return reply.code(200).send({ status: "success" });
 };
 const replyComment = async (req, res) => {
@@ -218,7 +215,7 @@ const replyComment = async (req, res) => {
             message: "User is unauthorize",
         });
     }
-    await (0, commentsQuery_js_1.replyComment)({
+    await replyCommentFc({
         commentId: req.body.commentId,
         targetId: req.body.targetId,
         author_id: req.userId,
@@ -237,11 +234,10 @@ const commentController = {
     downVoteToggle,
     replyComment,
 };
-exports.default = commentController;
+export default commentController;
 // ! Test
-const test = async (req, res) => {
+export const test = async (req, res) => {
     if (req.userId)
-        await (0, commentsQuery_js_1.testCommentQuery)({ userId: req.userId, commentId: req.body.commentId }, req.prisma);
+        await testCommentQuery({ userId: req.userId, commentId: req.body.commentId }, req.prisma);
     res.send({ status: "success" });
 };
-exports.test = test;

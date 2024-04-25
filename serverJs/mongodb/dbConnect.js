@@ -1,15 +1,9 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MongodbInstane = void 0;
-const mongodb_1 = require("mongodb");
-const node_path_1 = __importDefault(require("node:path"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config({ path: node_path_1.default.resolve(import.meta.dirname, "../.env") });
-class MongodbInstane {
-    static client = new mongodb_1.MongoClient(process.env.DATABASE_URL);
+import { MongoClient } from "mongodb";
+import path from "node:path";
+import dotenv from "dotenv";
+dotenv.config({ path: path.resolve(import.meta.dirname, "../.env") });
+export class MongodbInstane {
+    static client = new MongoClient(process.env.DATABASE_URL);
     static dbInstance;
     async getDbInstance() {
         if (!MongodbInstane.dbInstance) {
@@ -20,4 +14,3 @@ class MongodbInstane {
         return MongodbInstane.dbInstance;
     }
 }
-exports.MongodbInstane = MongodbInstane;
